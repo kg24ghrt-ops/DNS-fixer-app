@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     isConnected = connected,
                     currentMode = mode,
-                    pingMs = if (mode == ProtectionMode.BPS) 32 else 54, // Contextual feedback tracking
+                    pingMs = if (mode == ProtectionMode.BPS) 32 else 54,
                     onModeChange = { newMode ->
                         if (!connected) selectedMode.value = newMode
                     },
@@ -41,7 +41,6 @@ class MainActivity : ComponentActivity() {
     private fun handleConnectionToggle(start: Boolean) {
         if (start) {
             if (selectedMode.value == ProtectionMode.VPN) {
-                // Mode 2: Launch with system intent intercept verification
                 val vpnIntent = VpnService.prepare(this)
                 if (vpnIntent != null) {
                     startActivityForResult(vpnIntent, 1001)
@@ -49,7 +48,6 @@ class MainActivity : ComponentActivity() {
                     executeVpnService()
                 }
             } else {
-                // Mode 1: App-level loopback bypass routine execution directly
                 executeBpsMode()
             }
         } else {
@@ -58,7 +56,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun executeBpsMode() {
-        // Run localized client bypass hooks without initializing standard Android VpnService interface
         isConnected.value = true
     }
 
@@ -71,7 +68,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun terminateConnections() {
-        // Safeguard removal strategy for both processing flows
         val intent = Intent(this, BypassVpnService::class.java).apply {
             action = BypassVpnService.ACTION_DISCONNECT
         }
@@ -79,8 +75,9 @@ class MainActivity : ComponentActivity() {
         isConnected.value = false
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, requestCode, data)
+        super.onActivityResult(requestCode, resultCode, data) // Fixed parameter mapping here
         if (requestCode == 1001 && resultCode == RESULT_OK) {
             executeVpnService()
         }
