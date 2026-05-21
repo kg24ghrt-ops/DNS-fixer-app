@@ -1,7 +1,6 @@
 package com.community.dnsfix.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,17 +22,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-enum class ProtectionMode {
-    BPS, // App-layer bypass mode
-    VPN  // System-wide VPN service tunnel mode
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     isConnected: Boolean,
     currentMode: ProtectionMode,
-    pingMs: Int,
+    pingMs: Int?, // Changed to Int? to natively represent the loading/error states
     onModeChange: (ProtectionMode) -> Unit,
     onToggleConnection: (Boolean) -> Unit
 ) {
@@ -165,7 +159,7 @@ fun MainScreen(
                         .background(buttonColor)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = null
+                            indication = LocalIndication.current
                         ) { onToggleConnection(!isConnected) }
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -198,11 +192,28 @@ fun MainScreen(
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Current Latency", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                         Spacer(modifier = Modifier.height(4.dp))
+                        
+                        // Dynamic calculation states
+                        val hasValidPing = isConnected && pingMs != null && pingMs > 0
+                        
+                        val latencyText = when {
+                            !isConnected -> "--"
+                            pingMs == null || pingMs == 0 -> "Checking..."
+                            else -> "$pingMs ms"
+                        }
+                        
+                        val latencyColor = when {
+                            !hasValidPing -> MaterialTheme.colorScheme.onSurfaceVariant
+                            pingMs!! < 80 -> Color(0xFF2E7D32)  // Great connection (Green)
+                            pingMs > 200 -> Color(0xFFC62828)   // Heavy delay (Red)
+                            else -> Color(0xFFEF6C00)           // Moderate delay (Orange)
+                        }
+
                         Text(
-                            text = if (isConnected) "$pingMs ms" else "--",
-                            style = MaterialTheme.typography.titleLarge,
+                            text = latencyText,
+                            style = if (!hasValidPing) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = if (isConnected && pingMs < 80) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
+                            color = latencyColor
                         )
                     }
                 }
